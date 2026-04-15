@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { type ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { appNav, routes } from "@/lib/routes";
 
@@ -12,6 +12,15 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const onSignOut = async () => {
+    await fetch("/api/private/auth/sign-out", {
+      method: "POST",
+    });
+    router.push(routes.login);
+    router.refresh();
+  };
 
   return (
     <div className="flex min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
@@ -64,6 +73,13 @@ export function AppShell({ children }: AppShellProps) {
               <Link href={routes.contactSales} className="rounded-md border border-[var(--border-strong)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)]">
                 Contact Sales
               </Link>
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="rounded-md border border-[var(--border-strong)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)]"
+              >
+                Sign Out
+              </button>
               <Link href={routes.resolveComplaint} className="rounded-md bg-[var(--gold)] px-3 py-2 text-xs font-bold text-[var(--black)]">
                 Resolve Complaint
               </Link>

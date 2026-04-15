@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum OnboardingStatus {
+  STARTED
+  PROFILE_COMPLETED
+  GOOGLE_LINKED
+  QR_READY
+  COMPLETED
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskSourceType {
+  COMPLAINT
+  REVIEW_PROMPT
+  MANUAL
+}
+
+enum PromptDisposition {
+  IMPROVEMENT
+  POSITIVE
+}
+
+enum FeedbackCategory {
+  SERVICE
+  WAIT_TIME
+  PRODUCT_QUALITY
+  BILLING
+  CLEANLINESS
+  OTHER
+}
+
+model Account {
+  id               String            @id @default(uuid()) @db.Uuid
+  businessName     String
+  onboardingStatus OnboardingStatus  @default(STARTED)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  users            User[]
+  locations        Location[]
+  qrCodes          QrCode[]
+  feedbackSessions FeedbackSession[]
+  ratings          Rating[]
+  complaints       Complaint[]
+  reviewPrompts    ReviewPrompt[]
+  contactCaptures  ContactCapture[]
+  tasks            Task[]
+
+  @@map("accounts")
+}
+
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  accountId      String   @db.Uuid
+  neonAuthUserId String   @unique
+  email          String   @unique
+  fullName       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  account        Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  assignedTasks  Task[]
+
+  @@index([accountId, createdAt(sort: Desc)])
+  @@map("users")
+}
+
+model Location {
+  id                     String            @id @default(uuid()) @db.Uuid
+  accountId              String            @unique @db.Uuid
+  name                   String
+  googleBusinessLink     String?
+  googleReviewLink       String?
+  googlePlaceId          String?
+  googlePlaceName        String?
+  googleFormattedAddress String?
+  googleRating           Decimal?          @db.Decimal(2, 1)
+  googleReviewCount      Int?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  account                Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  qrCodes                QrCode[]
+  feedbackSessions       FeedbackSession[]
+  ratings                Rating[]
+  complaints             Complaint[]
+  reviewPrompts          ReviewPrompt[]
+  contactCaptures        ContactCapture[]
+  tasks                  Task[]
+
+  @@index([accountId])
+  @@map("locations")
+}
+
+model QrCode {
+  id            String            @id @default(uuid()) @db.Uuid
+  accountId     String            @db.Uuid
+  locationId    String            @db.Uuid
+  slug          String            @unique
+  label         String
+  qrSvg         String
+  isActive      Boolean           @default(true)
+  scanCount     Int               @default(0)
+  lastScannedAt DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  account       Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  location      Location          @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  sessions      FeedbackSession[]
+
+  @@index([accountId, createdAt(sort: Desc)])
+  @@index([locationId, createdAt(sort: Desc)])
+  @@map("qr_codes")
+}
+
+model FeedbackSession {
+  id             String          @id @default(uuid()) @db.Uuid
+  accountId      String          @db.Uuid
+  locationId     String          @db.Uuid
+  qrCodeId       String?         @db.Uuid
+  ipHash         String?
+  userAgent      String?
+  startedAt      DateTime        @default(now())
+  account        Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  location       Location        @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  qrCode         QrCode?         @relation(fields: [qrCodeId], references: [id], onDelete: SetNull)
+  rating         Rating?
+  contactCapture ContactCapture?
+
+  @@index([accountId, startedAt(sort: Desc)])
+  @@index([locationId, startedAt(sort: Desc)])
+  @@index([qrCodeId, startedAt(sort: Desc)])
+  @@map("feedback_sessions")
+}
+
+model Rating {
+  id                String            @id @default(uuid()) @db.Uuid
+  accountId         String            @db.Uuid
+  locationId        String            @db.Uuid
+  feedbackSessionId String            @unique @db.Uuid
+  score             Int
+  comment           String?
+  category          FeedbackCategory?
+  createdAt         DateTime          @default(now())
+  account           Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  location          Location          @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  feedbackSession   FeedbackSession   @relation(fields: [feedbackSessionId], references: [id], onDelete: Cascade)
+  complaint         Complaint?
+  reviewPrompt      ReviewPrompt?
+
+  @@index([accountId, createdAt(sort: Desc)])
+  @@index([locationId, createdAt(sort: Desc)])
+  @@index([score, createdAt(sort: Desc)])
+  @@map("ratings")
+}
+
+model Complaint {
+  id         String          @id @default(uuid()) @db.Uuid
+  accountId  String          @db.Uuid
+  locationId String          @db.Uuid
+  ratingId   String          @unique @db.Uuid
+  status     ComplaintStatus @default(OPEN)
+  summary    String?
+  ownerNotes String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  resolvedAt DateTime?
+  account    Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  location   Location        @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  rating     Rating          @relation(fields: [ratingId], references: [id], onDelete: Cascade)
+  task       Task?
+
+  @@index([accountId, status, createdAt(sort: Desc)])
+  @@index([locationId, status, createdAt(sort: Desc)])
+  @@map("complaints")
+}
+
+model ReviewPrompt {
+  id             String            @id @default(uuid()) @db.Uuid
+  accountId      String            @db.Uuid
+  locationId     String            @db.Uuid
+  ratingId       String            @unique @db.Uuid
+  disposition    PromptDisposition
+  destinationUrl String
+  clickedAt      DateTime?
+  createdAt      DateTime          @default(now())
+  account        Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  location       Location          @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  rating         Rating            @relation(fields: [ratingId], references: [id], onDelete: Cascade)
+  tasks          Task[]
+
+  @@index([accountId, createdAt(sort: Desc)])
+  @@index([locationId, createdAt(sort: Desc)])
+  @@map("review_prompts")
+}
+
+model ContactCapture {
+  id                String          @id @default(uuid()) @db.Uuid
+  accountId         String          @db.Uuid
+  locationId        String          @db.Uuid
+  feedbackSessionId String          @unique @db.Uuid
+  phoneNumber       String
+  consented         Boolean         @default(false)
+  consentedAt       DateTime?
+  createdAt         DateTime        @default(now())
+  account           Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  location          Location        @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  feedbackSession   FeedbackSession @relation(fields: [feedbackSessionId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt(sort: Desc)])
+  @@index([locationId, createdAt(sort: Desc)])
+  @@map("contact_captures")
+}
+
+model Task {
+  id             String         @id @default(uuid()) @db.Uuid
+  accountId      String         @db.Uuid
+  locationId     String         @db.Uuid
+  sourceType     TaskSourceType
+  complaintId    String?        @unique @db.Uuid
+  reviewPromptId String?        @db.Uuid
+  title          String
+  details        String?
+  priority       TaskPriority   @default(MEDIUM)
+  status         TaskStatus     @default(OPEN)
+  assignedUserId String?        @db.Uuid
+  dueAt          DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  completedAt    DateTime?
+  account        Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  location       Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  complaint      Complaint?     @relation(fields: [complaintId], references: [id], onDelete: SetNull)
+  reviewPrompt   ReviewPrompt?  @relation(fields: [reviewPromptId], references: [id], onDelete: SetNull)
+  assignedUser   User?          @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  @@index([accountId, status, priority, createdAt(sort: Desc)])
+  @@index([locationId, status, createdAt(sort: Desc)])
+  @@index([reviewPromptId])
+  @@map("tasks")
+}

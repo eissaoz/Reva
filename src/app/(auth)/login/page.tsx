@@ -10,17 +10,42 @@ import { routes } from "@/lib/routes";
 export default function LoginPage() {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setErrorMessage(null);
     setIsSubmitting(true);
-    setOpen(true);
-    window.setTimeout(() => router.push(routes.dashboard), 700);
-    window.setTimeout(() => {
-      setOpen(false);
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+    const remember = formData.get("remember") === "on";
+
+    const response = await fetch("/api/private/auth/sign-in", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        rememberMe: remember,
+      }),
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      setErrorMessage(payload?.error ?? "Unable to sign in.");
       setIsSubmitting(false);
-    }, 2400);
+      return;
+    }
+
+    setOpen(true);
+    router.push(routes.dashboard);
+    router.refresh();
+    setIsSubmitting(false);
   };
 
   return (
@@ -47,9 +72,15 @@ export default function LoginPage() {
         </div>
 
         <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <input type="checkbox" className="h-4 w-4 rounded border-[var(--border-strong)] bg-transparent" />
+          <input name="remember" type="checkbox" className="h-4 w-4 rounded border-[var(--border-strong)] bg-transparent" defaultChecked />
           Remember this device
         </label>
+
+        {errorMessage ? (
+          <p className="rounded-md border border-[var(--danger)]/30 bg-[var(--danger-bg)] px-3 py-2 text-xs text-[var(--danger)]">
+            {errorMessage}
+          </p>
+        ) : null}
 
         <button type="submit" disabled={isSubmitting} className="veil-btn-primary w-full py-3 text-sm uppercase tracking-wide">
           <span className="inline-flex items-center gap-2">
@@ -66,7 +97,7 @@ export default function LoginPage() {
         </p>
       </form>
 
-      <Toast open={open} message="Signed in (demo). Backend will be added later." />
+      <Toast open={open} message="Signed in successfully." />
     </>
   );
 }
