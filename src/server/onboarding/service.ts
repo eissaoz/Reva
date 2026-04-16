@@ -16,6 +16,11 @@ export type OnboardingSnapshot = {
   businessName: string;
   locationName: string;
   googleBusinessLink: string | null;
+  googleReviewLink: string | null;
+  googlePlaceName: string | null;
+  googleFormattedAddress: string | null;
+  googleRating: number | null;
+  googleReviewCount: number | null;
   completedSteps: Array<"profile" | "google_link">;
   missingFields: Array<"businessName" | "locationName" | "googleBusinessLink">;
   nextStep: "profile" | "google_link" | "ready_for_qr";
@@ -95,6 +100,11 @@ export async function getOnboardingSnapshot(accountId: string): Promise<Onboardi
         select: {
           name: true,
           googleBusinessLink: true,
+          googleReviewLink: true,
+          googlePlaceName: true,
+          googleFormattedAddress: true,
+          googleRating: true,
+          googleReviewCount: true,
         },
         take: 1,
       },
@@ -137,6 +147,11 @@ export async function getOnboardingSnapshot(accountId: string): Promise<Onboardi
     businessName: account.businessName,
     locationName: location.name,
     googleBusinessLink: location.googleBusinessLink ?? null,
+    googleReviewLink: location.googleReviewLink ?? null,
+    googlePlaceName: location.googlePlaceName ?? null,
+    googleFormattedAddress: location.googleFormattedAddress ?? null,
+    googleRating: location.googleRating ? Number(location.googleRating) : null,
+    googleReviewCount: typeof location.googleReviewCount === "number" ? location.googleReviewCount : null,
     completedSteps,
     missingFields,
     nextStep,

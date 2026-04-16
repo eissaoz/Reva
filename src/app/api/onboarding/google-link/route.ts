@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { requireAccountContext, toErrorResponse } from "@/server/auth/context";
 import { advanceOnboardingStatus, getOnboardingSnapshot, normalizeGoogleBusinessLink } from "@/server/onboarding/service";
+import {
+  GooglePlaceProviderError,
+  GooglePlaceQuotaError,
+  GooglePlaceValidationError,
+  resolveGooglePlaceFromLink,
+} from "@/server/google-places/service";
 import { rateLimitPolicies } from "@/server/rate-limit/config";
 import { requireRateLimit } from "@/server/rate-limit/service";
 
@@ -31,6 +37,8 @@ export async function POST(request: Request) {
       );
     }
 
+    const resolvedPlace = await resolveGooglePlaceFromLink(googleBusinessLink);
+
     await prisma.$transaction(async (tx) => {
       const account = await tx.account.findUnique({
         where: {
@@ -50,7 +58,13 @@ export async function POST(request: Request) {
           accountId: context.accountId,
         },
         data: {
-          googleBusinessLink,
+          googleBusinessLink: resolvedPlace.businessLink,
+          googleReviewLink: resolvedPlace.reviewLink,
+          googlePlaceId: resolvedPlace.placeId,
+          googlePlaceName: resolvedPlace.placeName,
+          googleFormattedAddress: resolvedPlace.formattedAddress,
+          googleRating: resolvedPlace.rating,
+          googleReviewCount: resolvedPlace.reviewCount,
         },
       });
 
@@ -72,6 +86,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       onboarding: snapshot,
+      googlePlace: {
+        placeId: resolvedPlace.placeId,
+        placeName: resolvedPlace.placeName,
+        formattedAddress: resolvedPlace.formattedAddress,
+        rating: resolvedPlace.rating,
+        reviewCount: resolvedPlace.reviewCount,
+        reviewLink: resolvedPlace.reviewLink,
+      },
       statusHint: {
         nextStep: snapshot.nextStep,
       },
@@ -81,6 +103,18 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    if (error instanceof GooglePlaceValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
+    if (error instanceof GooglePlaceQuotaError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
+    if (error instanceof GooglePlaceProviderError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     const failure = toErrorResponse(error);
     const status = failure.message === "Account not found" ? 404 : failure.status;
 

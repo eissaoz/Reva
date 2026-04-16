@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { routes } from "@/lib/routes";
 
 type SettingsSectionKey =
@@ -10,6 +11,17 @@ type SettingsSectionKey =
   | "business-links"
   | "rewards"
   | "qr-assets";
+
+type OnboardingData = {
+  businessName: string;
+  locationName: string;
+  googleBusinessLink: string | null;
+  googleReviewLink: string | null;
+  googlePlaceName: string | null;
+  googleFormattedAddress: string | null;
+  googleRating: number | null;
+  googleReviewCount: number | null;
+};
 
 const sectionTabs: Array<{ key: SettingsSectionKey; label: string }> = [
   { key: "business-profile", label: "Business Profile" },
@@ -25,7 +37,7 @@ function getActiveSection(value: string | null): SettingsSectionKey {
     : "business-profile";
 }
 
-function BusinessProfileSection() {
+function BusinessProfileSection({ onboarding }: { onboarding: OnboardingData | null }) {
   return (
     <section className="veil-card p-6">
       <h2 className="font-headline text-2xl font-bold tracking-tight">Business Profile</h2>
@@ -37,7 +49,7 @@ function BusinessProfileSection() {
           <input
             id="businessName"
             className="veil-input cursor-not-allowed opacity-80"
-            defaultValue="Spice Route Kitchen"
+            value={onboarding?.businessName ?? "-"}
             readOnly
             aria-readonly
           />
@@ -64,7 +76,7 @@ function BusinessProfileSection() {
   );
 }
 
-function LocationSection() {
+function LocationSection({ onboarding }: { onboarding: OnboardingData | null }) {
   return (
     <section className="veil-card p-6">
       <h2 className="font-headline text-2xl font-bold tracking-tight">Location</h2>
@@ -75,8 +87,8 @@ function LocationSection() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(196,165,53,0.25),transparent_42%),radial-gradient(circle_at_75%_75%,rgba(196,165,53,0.2),transparent_38%)]" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
             <span className="material-symbols-outlined text-4xl text-[var(--gold)]">location_on</span>
-            <p className="text-sm font-semibold">Spice Route Kitchen - Main Branch</p>
-            <p className="text-xs text-[var(--text-secondary)]">Nairobi, Kenya</p>
+            <p className="text-sm font-semibold">{onboarding?.locationName ?? "Main Location"}</p>
+            <p className="text-xs text-[var(--text-secondary)]">{onboarding?.googleFormattedAddress ?? "Address pending Google resolution"}</p>
           </div>
         </div>
       </div>
@@ -84,7 +96,7 @@ function LocationSection() {
   );
 }
 
-function BusinessLinksSection() {
+function BusinessLinksSection({ onboarding }: { onboarding: OnboardingData | null }) {
   return (
     <section className="veil-card p-6">
       <h2 className="font-headline text-2xl font-bold tracking-tight">Business Links</h2>
@@ -93,17 +105,25 @@ function BusinessLinksSection() {
       <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div>
           <label className="veil-label" htmlFor="googleBusiness">Google Business Link</label>
-          <input id="googleBusiness" className="veil-input" defaultValue="https://maps.google.com/?cid=12345" readOnly />
+          <input id="googleBusiness" className="veil-input" value={onboarding?.googleBusinessLink ?? "Not linked yet"} readOnly />
         </div>
         <div>
           <label className="veil-label" htmlFor="googleReview">Google Review Link</label>
-          <input id="googleReview" className="veil-input" defaultValue="https://search.google.com/local/writereview?placeid=seed-place-id" readOnly />
+          <input id="googleReview" className="veil-input" value={onboarding?.googleReviewLink ?? "Not available yet"} readOnly />
         </div>
       </div>
 
       <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-3 text-xs text-[var(--text-secondary)]">
-        These values come from onboarding and Google resolution.
+        <p>Google Place: {onboarding?.googlePlaceName ?? "Pending resolution"}</p>
+        <p>
+          Rating: {onboarding?.googleRating !== null && onboarding?.googleRating !== undefined ? onboarding.googleRating.toFixed(1) : "-"}
+          {onboarding?.googleReviewCount !== null && onboarding?.googleReviewCount !== undefined
+            ? ` (${onboarding.googleReviewCount} reviews)`
+            : ""}
+        </p>
       </div>
+
+      <div className="mt-3 text-xs text-[var(--text-secondary)]">These values come from onboarding and Google resolution.</div>
 
       <div className="mt-6 flex flex-wrap gap-2">
         <button className="veil-btn-ghost px-4 py-2 text-sm" type="button">Copy Links</button>
@@ -195,6 +215,21 @@ function QrAssetsSection() {
 export default function SettingsPage() {
   const searchParams = useSearchParams();
   const activeSection = getActiveSection(searchParams.get("section"));
+  const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
+
+  useEffect(() => {
+    const run = async () => {
+      const response = await fetch("/api/onboarding/status", { cache: "no-store" });
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = (await response.json()) as { onboarding: OnboardingData };
+      setOnboarding(payload.onboarding);
+    };
+
+    void run();
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -224,9 +259,9 @@ export default function SettingsPage() {
         </aside>
 
         <div className="space-y-6 lg:col-span-9">
-          {activeSection === "business-profile" ? <BusinessProfileSection /> : null}
-          {activeSection === "location" ? <LocationSection /> : null}
-          {activeSection === "business-links" ? <BusinessLinksSection /> : null}
+          {activeSection === "business-profile" ? <BusinessProfileSection onboarding={onboarding} /> : null}
+          {activeSection === "location" ? <LocationSection onboarding={onboarding} /> : null}
+          {activeSection === "business-links" ? <BusinessLinksSection onboarding={onboarding} /> : null}
           {activeSection === "rewards" ? <RewardsSection /> : null}
           {activeSection === "qr-assets" ? <QrAssetsSection /> : null}
         </div>

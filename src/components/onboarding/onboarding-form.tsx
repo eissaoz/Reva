@@ -9,6 +9,11 @@ export type OnboardingStatusView = {
   businessName: string;
   locationName: string;
   googleBusinessLink: string | null;
+  googleReviewLink: string | null;
+  googlePlaceName: string | null;
+  googleFormattedAddress: string | null;
+  googleRating: number | null;
+  googleReviewCount: number | null;
   completedSteps: Array<"profile" | "google_link">;
   missingFields: Array<"businessName" | "locationName" | "googleBusinessLink">;
   nextStep: "profile" | "google_link" | "ready_for_qr";
@@ -149,6 +154,22 @@ export function OnboardingForm({ initialOnboarding }: OnboardingFormProps) {
           </button>
         </form>
       </section>
+
+      {onboarding.googlePlaceName || onboarding.googleFormattedAddress || onboarding.googleReviewLink ? (
+        <section className="veil-card p-6">
+          <h2 className="font-headline text-xl font-bold tracking-tight">Resolved from Google</h2>
+          <div className="mt-4 space-y-2 text-sm">
+            <p><span className="text-[var(--text-muted)]">Place:</span> {onboarding.googlePlaceName ?? "-"}</p>
+            <p><span className="text-[var(--text-muted)]">Address:</span> {onboarding.googleFormattedAddress ?? "-"}</p>
+            <p>
+              <span className="text-[var(--text-muted)]">Rating:</span>{" "}
+              {onboarding.googleRating !== null ? onboarding.googleRating.toFixed(1) : "-"}
+              {onboarding.googleReviewCount !== null ? ` (${onboarding.googleReviewCount} reviews)` : ""}
+            </p>
+            <p className="break-all"><span className="text-[var(--text-muted)]">Review Link:</span> {onboarding.googleReviewLink ?? "-"}</p>
+          </div>
+        </section>
+      ) : null}
 
       {onboarding.nextStep === "ready_for_qr" ? (
         <section className="veil-card p-6">
