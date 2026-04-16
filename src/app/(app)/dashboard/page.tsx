@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getOptionalAccountContext } from "@/server/auth/context";
+import { getOnboardingSnapshot } from "@/server/onboarding/service";
 import { routes } from "@/lib/routes";
 
 const stats = [
@@ -8,9 +10,27 @@ const stats = [
   { label: "Private Caught", value: "14", delta: "Intercepted" },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const context = await getOptionalAccountContext();
+  const onboarding = context ? await getOnboardingSnapshot(context.accountId) : null;
+  const onboardingIncomplete = onboarding ? onboarding.nextStep !== "ready_for_qr" : false;
+
   return (
     <div className="space-y-8">
+      {onboardingIncomplete ? (
+        <section className="veil-card border-[var(--gold)] p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-muted)]">Onboarding pending</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">Complete onboarding to finalize your business setup.</p>
+            </div>
+            <Link href={routes.onboarding} className="veil-btn-primary px-4 py-2 text-xs uppercase tracking-wide">
+              Continue onboarding
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-headline text-5xl font-extrabold tracking-tight">System Vitals</h1>

@@ -8,11 +8,13 @@ import { appNav, routes } from "@/lib/routes";
 
 type AppShellProps = {
   children: ReactNode;
+  showOnboardingNav: boolean;
 };
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, showOnboardingNav }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const navItems = showOnboardingNav ? appNav : appNav.filter((item) => item.href !== routes.onboarding);
 
   const onSignOut = async () => {
     await fetch("/api/private/auth/sign-out", {
@@ -31,7 +33,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
 
         <nav className="flex-1 space-y-1">
-          {appNav.map((item) => {
+          {navItems.map((item) => {
             const active = pathname === item.href;
             return (
               <Link
@@ -66,7 +68,7 @@ export function AppShell({ children }: AppShellProps) {
             <div className="flex items-center gap-2 text-sm">
               <span className="text-[var(--text-muted)]">REVA</span>
               <span className="material-symbols-outlined text-xs text-[var(--text-muted)]">chevron_right</span>
-              <span className="font-semibold">{appNav.find((n) => n.href === pathname)?.label ?? "Workspace"}</span>
+              <span className="font-semibold">{navItems.find((n) => n.href === pathname)?.label ?? "Workspace"}</span>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />

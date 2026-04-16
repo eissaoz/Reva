@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { authServer } from "@/server/auth/neon-auth";
+import { RateLimitExceededError, RateLimitStoreUnavailableError } from "@/server/rate-limit/service";
 
 export class AuthContextError extends Error {
   readonly status: number;
@@ -76,8 +77,31 @@ export async function requireAccountContext(): Promise<AccountContext> {
   };
 }
 
-export function toErrorResponse(error: unknown): { status: number; message: string } {
+export function toErrorResponse(error: unknown): {
+  status: number;
+  message: string;
+  retryAfterSeconds?: number;
+  limit?: number;
+  remaining?: number;
+} {
   if (error instanceof AuthContextError) {
+    return {
+      status: error.status,
+      message: error.message,
+    };
+  }
+
+  if (error instanceof RateLimitExceededError) {
+    return {
+      status: error.status,
+      message: error.message,
+      retryAfterSeconds: error.retryAfterSeconds,
+      limit: error.limit,
+      remaining: error.remaining,
+    };
+  }
+
+  if (error instanceof RateLimitStoreUnavailableError) {
     return {
       status: error.status,
       message: error.message,

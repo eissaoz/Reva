@@ -19,15 +19,9 @@ export default function SignupPage() {
 
     const formData = new FormData(event.currentTarget);
     const fullName = String(formData.get("fullName") ?? "").trim();
-    const businessName = String(formData.get("businessName") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
-
-    if (!businessName) {
-      setErrorMessage("Business name is required.");
-      return;
-    }
 
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match.");
@@ -43,7 +37,6 @@ export default function SignupPage() {
       },
       body: JSON.stringify({
         name: fullName,
-        businessName,
         email,
         password,
       }),
@@ -73,10 +66,6 @@ export default function SignupPage() {
         <div>
           <label htmlFor="fullName" className="veil-label">Full Name</label>
           <input id="fullName" name="fullName" className="veil-input" placeholder="Alexander Hamilton" required />
-        </div>
-        <div>
-          <label htmlFor="businessName" className="veil-label">Business Name</label>
-          <input id="businessName" name="businessName" className="veil-input" placeholder="The Gilded Lily" required />
         </div>
         <div>
           <label htmlFor="email" className="veil-label">Business Email</label>

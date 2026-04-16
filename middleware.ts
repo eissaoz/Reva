@@ -7,6 +7,7 @@ const protectedPrefixes = [
   "/settings",
   "/billing",
   "/resolve-complaint",
+  "/onboarding",
 ];
 
 function isProtectedPath(pathname: string) {
@@ -39,5 +40,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/customers/:path*", "/tasks/:path*", "/settings/:path*", "/billing/:path*", "/resolve-complaint/:path*"],
+  matcher: ["/dashboard/:path*", "/customers/:path*", "/tasks/:path*", "/settings/:path*", "/billing/:path*", "/resolve-complaint/:path*", "/onboarding/:path*"],
 };

@@ -6,6 +6,7 @@ export const routes = {
   billing: "/billing",
   contactSales: "/contact-sales",
   dashboard: "/dashboard",
+  onboarding: "/onboarding",
   customers: "/customers",
   tasks: "/tasks",
   settings: "/settings",
@@ -18,6 +19,7 @@ export const routes = {
 } as const;
 
 export const appNav = [
+  { label: "Onboarding", href: routes.onboarding, icon: "checklist" },
   { label: "Overview", href: routes.dashboard, icon: "dashboard" },
   { label: "Customers", href: routes.customers, icon: "group" },
   { label: "Tasks", href: routes.tasks, icon: "assignment" },

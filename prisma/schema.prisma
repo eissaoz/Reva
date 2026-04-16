@@ -263,3 +263,15 @@ model Task {
   @@index([reviewPromptId])
   @@map("tasks")
 }
+
+model RateLimitEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String
+  scope     String
+  endpoint  String
+  createdAt DateTime @default(now())
+
+  @@index([key, endpoint, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("rate_limit_events")
+}
