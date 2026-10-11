@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# REVA — Business Customer Feedback Platform
 
-## Getting Started
+REVA is a personal software project exploring how businesses can collect customer feedback and better understand customer experiences through QR-code-based feedback workflows.
 
-First, run the development server:
+## The Problem
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Businesses need ways to understand customer experiences, identify concerns, and learn where their services can improve. REVA explores a digital approach to collecting feedback and helping businesses follow up on customer concerns.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Planned Workflow
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The original concept explored a QR-code feedback experience where customers could share their experiences with a business. The project also explored ways to connect feedback workflows with business review platforms.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The original review-routing design was paused after identifying Google review-policy constraints. The project is not presented as a production-ready service.
 
-## Learn More
+## Technology Stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Next.js** — web application framework
+- **TypeScript** — application development
+- **Prisma** — database ORM
+- **Neon PostgreSQL** — hosted relational database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## What I Explored
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Building a web application with Next.js and TypeScript
+- Working with a PostgreSQL database through Prisma
+- Exploring customer feedback workflows and business requirements
+- Investigating third-party API integration and platform constraints
 
-## Deploy on Vercel
+## Project Status
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Status:** Paused — personal project
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+REVA is an exploratory project and is not currently presented as a production-ready application. Features and integrations should be considered implemented only where supported by the current codebase.
+
+## Repository
+
+Source code: https://github.com/eissaoz/Reva
+
